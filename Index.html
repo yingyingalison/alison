@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
+    <style>
+      :root {
+        --bg: #fffef8;
+        --card: #ffffff;
+        --yellow-50: #fffbeb;
+        --yellow-100: #fef3c7;
+        --yellow-200: #fde68a;
+        --yellow-400: #fbbf24;
+        --yellow-500: #f59e0b;
+        --text: #1c1917;
+        --text-muted: #57534e;
+        --border: #e7e5e4;
+        --success: #15803d;
+        --radius: 12px;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--font);
+        color: var(--text);
+        background: linear-gradient(180deg, var(--yellow-50) 0%, var(--bg) 40%, #ffffff 100%);
+        line-height: 1.5;
+        font-size: 17px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0.6rem;
+        padding-bottom: max(2rem, env(safe-area-inset-bottom));
+        padding-left: max(0.6rem, env(safe-area-inset-left));
+        padding-right: max(0.6rem, env(safe-area-inset-right));
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+
+      .sub {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      .main-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        background: var(--card);
+        padding: 0.5rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      .main-tabs button {
+        flex: 1;
+        min-height: 52px;
+        border: none;
+        background: transparent;
+        padding: 0.75rem 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-radius: 10px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+      }
+
+      .main-tabs button:hover {
+        background: var(--yellow-50);
+      }
+
+      .main-tabs button.active {
+        background: var(--yellow-200);
+        color: var(--text);
+      }
+
+      .panel {
+        display: none;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.12);
+      }
+
+      .panel.active {
+        display: block;
+      }
+
+      .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .field.full {
+        /* full width already from flex column */
+      }
+
+      label {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .hint {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 400;
+        display: inline-block;
+        margin-left: 0.25rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.9rem 0.8rem;
+        font-size: 1rem;
+        font-family: inherit;
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        background: #fffef8;
+        color: var(--text);
+        transition: border-color 0.2s;
+      }
+
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--yellow-400);
+        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+      }
+
+      .actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-direction: column;
+      }
+
+      .btn {
+        border: none;
+        padding: 1rem 1.25rem;
+        min-height: 52px;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+        text-align: center;
+      }
+
+      .btn-primary {
+        background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+        color: #1c1917;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-primary:active {
+        transform: scale(0.98);
+      }
+
+      .btn-ghost {
+        background: var(--yellow-100);
+        color: var(--text);
+      }
+
+      .btn-ghost:active {
+        transform: scale(0.98);
+      }
+
+      .msg {
+        margin-top: 1rem;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      .msg.ok {
+        display: block;
+        background: #dcfce7;
+        color: #14532d;
+        border: 1px solid #86efac;
+      }
+
+      .msg.err {
+        display: block;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .history-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .person-filter-wrap {
+        margin-bottom: 1rem;
+        padding: 0.8rem;
+        background: var(--yellow-50);
+        border: 1px solid var(--yellow-200);
+        border-radius: var(--radius);
+      }
+
+      .person-filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.6rem;
+      }
+
+      .person-filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .person-filter-btn {
+        flex: 1;
+        min-width: 0;
+        min-height: 48px;
+        padding: 0.6rem 0.5rem;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        background: #fffef8;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .person-filter-btn.active {
+        background: var(--yellow-200);
+        border-color: #d97706;
+      }
+
+      .chip-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 0.25rem 0;
+      }
+
+      .chip {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        border: 1.5px solid var(--border);
+        background: var(--yellow-50);
+        font-size: 1rem;
+        cursor: pointer;
+        font-family: inherit;
+        color: var(--text);
+        width: 100%;
+        transition: all 0.2s;
+      }
+
+      .chip:active {
+        transform: scale(0.99);
+      }
+
+      .chip.selected {
+        background: var(--yellow-200);
+        border-color: #d97706;
+        font-weight: 600;
+      }
+
+      .chip .lead {
+        flex: 1;
+        font-weight: 600;
+        text-align: left;
+        font-size: 1rem;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+        white-space: nowrap;
+      }
+
+      .badge-considering {
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+      .badge-accept {
+        background: #dcfce7;
+        color: #14532d;
+      }
+      .badge-reject {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge-tofollowup {
+        background: #ffedd5;
+        color: #9a3412;
+      }
+      .badge-default {
+        background: var(--yellow-100);
+        color: var(--text);
+      }
+
+      .badge-person {
+        background: #fff7ed;
+        color: #9a3412;
+        border: 1px solid #fed7aa;
+      }
+
+      .detail-card {
+        background: var(--yellow-50);
+        border: 1px solid var(--yellow-200);
+        border-radius: var(--radius);
+        padding: 1rem;
+      }
+
+      .detail-card h3 {
+        margin: 0 0 1rem;
+        font-size: 1.2rem;
+        color: var(--text);
+        word-break: break-word;
+      }
+
+      .status-editor {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px dashed var(--yellow-200);
+      }
+
+      .status-editor-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .status-editor-row select {
+        flex: 1;
+        padding: 0.9rem;
+        font-size: 1rem;
+      }
+
+      .status-editor-row .btn {
+        width: 100%;
+      }
+
+      .status-msg {
+        margin-top: 0.75rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .status-msg.ok {
+        color: #14532d;
+        font-weight: 600;
+      }
+
+      .status-msg.err {
+        color: #991b1b;
+        font-weight: 600;
+      }
+
+      .detail dl {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin: 0;
+        font-size: 0.95rem;
+      }
+
+      .detail dt {
+        color: var(--text-muted);
+        font-weight: 500;
+        margin: 0;
+        font-size: 0.85rem;
+      }
+
+      .detail dd {
+        margin: 0.2rem 0 0 0;
+        color: var(--text);
+        word-break: break-word;
+        font-size: 1rem;
+        font-weight: 500;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--yellow-200);
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2rem 0.5rem;
+        font-size: 0.95rem;
+      }
+
+      .loading {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 2rem;
+      }
+
+      .viz-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .viz-toolbar .btn {
+        flex: 1;
+      }
+
+      .viz-chart-block {
+        margin-bottom: 1.5rem;
+      }
+
+      .viz-chart-heading {
+        margin: 0 0 0.75rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        text-align: center;
+      }
+
+      .reply-chart-frame {
+        display: flex;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+
+      .reply-chart-y-label {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text);
+        padding: 0.5rem 0;
+        white-space: nowrap;
+      }
+
+      .reply-chart-main {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--yellow-50);
+        padding: 0.75rem 0.5rem;
+        overflow-x: auto;
+      }
+
+      .reply-chart-inner {
+        display: flex;
+        gap: 0.5rem;
+        min-width: 280px;
+      }
+
+      .reply-chart-y {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding-right: 0.5rem;
+        min-width: 2rem;
+        height: 200px;
+        font-size: 0.7rem;
+        font-weight: 600;
+      }
+
+      .reply-chart-bars {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        gap: 0.5rem;
+        height: 200px;
+        padding-left: 0.5rem;
+        border-left: 2px solid var(--text);
+        border-bottom: 2px solid var(--text);
+      }
+
+      .reply-chart-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.3rem;
+      }
+
+      .reply-chart-count {
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .reply-chart-bar {
+        width: 100%;
+        max-width: 50px;
+        border-radius: 6px 6px 2px 2px;
+        background: linear-gradient(180deg, #fde68a 0%, #fbbf24 55%, #f59e0b 100%);
+        border: 1px solid #d97706;
+        transition: height 0.3s ease;
+        min-height: 3px;
+      }
+
+      .reply-chart-xlabel {
+        margin-top: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-align: center;
+        word-break: break-word;
+      }
+
+      .viz-axis-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-align: center;
+        margin-top: 0.75rem;
+      }
+      @media (max-width: 480px) {
+        .btn {
+          font-size: 1.05rem;
+          padding: 1.1rem;
+        }
+
+        .main-tabs button {
+          font-size: 1.05rem;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+      }
+      input, select, textarea {
+        font-size: 16px;
+      }
+      html {
+        font-size: clamp(15px, 4vw, 18px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>📋 Sales Follow Up</h1>
+        <p class="sub">Enter new leads and review follow-up history</p>
+      </header>
+
+      <div class="main-tabs" role="tablist">
+        <button type="button" class="active" data-panel="new" role="tab">➕ New Lead</button>
+        <button type="button" data-panel="history" role="tab">📜 History</button>
+        <button type="button" data-panel="chart" role="tab">📊 Charts</button>
+      </div>
+
+      <section id="panel-new" class="panel active" role="tabpanel">
+        <form id="form-new" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="leadName">⭐ Lead Name <span style="color:red">*</span></label>
+              <input id="leadName" name="leadName" type="text" required autocomplete="off" placeholder="e.g., John Doe" />
+            </div>
+            <div class="field">
+              <label for="customerReply">💬 Customer Reply <span style="color:red">*</span></label>
+              <select id="customerReply" name="customerReply" required>
+                <option value="">— Select —</option>
+                <option value="considering">🤔 Considering</option>
+                <option value="accept">✅ Accept</option>
+                <option value="reject">❌ Reject</option>
+                <option value="to follow up">📞 To follow up</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="customerType">🏢 Customer Type <span style="color:red">*</span></label>
+              <select id="customerType" name="customerType" required>
+                <option value="">— Select —</option>
+                <option value="residential">🏠 Residential</option>
+                <option value="commercial">🏭 Commercial</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="personFollowUp">👤 Person Follow Up <span style="color:red">*</span></label>
+              <select id="personFollowUp" name="personFollowUp" required>
+                <option value="">— Select —</option>
+                <option value="Allan">👨 Allan</option>
+                <option value="Susie">👩 Susie</option>
+                <option value="CongSheng">👨 CongSheng</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="savedContact">📱 Saved Contact in Phone <span style="color:red">*</span></label>
+              <select id="savedContact" name="savedContact" required>
+                <option value="">— Select —</option>
+                <option value="Allan">👨 Allan</option>
+                <option value="Susie">👩 Susie</option>
+                <option value="Sales">💰 Sales</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="dateAcquired">📅 Date Acquired</label>
+              <input id="dateAcquired" name="dateAcquired" type="date" />
+            </div>
+            <div class="field full">
+              <label for="customerPhone">📞 Customer Phone</label>
+              <textarea id="customerPhone" name="customerPhone" rows="2" placeholder="e.g., John — 012-xxx; Wife — 017-xxx"></textarea>
+            </div>
+            <div class="field full">
+              <label for="address">📍 Address</label>
+              <textarea id="address" name="address" rows="2" placeholder="Full address..."></textarea>
+            </div>
+            <div class="field">
+              <label for="noteAverageBill">💰 Average Bill</label>
+              <input id="noteAverageBill" name="noteAverageBill" type="text" placeholder="e.g., RM 200" />
+            </div>
+            <div class="field">
+              <label for="proposalSize">📐 Proposal Size</label>
+              <input id="proposalSize" name="proposalSize" type="text" placeholder="e.g., 5kW" />
+            </div>
+            <div class="field">
+              <label for="proposalPrice">💵 Proposal Price</label>
+              <input id="proposalPrice" name="proposalPrice" type="text" placeholder="e.g., RM 15,000" />
+            </div>
+            <div class="field">
+              <label for="panelPcs">🔢 Panel Pcs</label>
+              <input id="panelPcs" name="panelPcs" type="text" placeholder="e.g., 12" />
+            </div>
+            <div class="field">
+              <label for="expectedSaving">💡 Expected Saving</label>
+              <input id="expectedSaving" name="expectedSaving" type="text" placeholder="e.g., RM 200/month" />
+            </div>
+            <div class="field full">
+              <label for="noteCall">📞 Note Call</label>
+              <textarea id="noteCall" name="noteCall" rows="2" placeholder="Call notes, conversation summary..."></textarea>
+            </div>
+            <div class="field full">
+              <label for="note">📝 Note 2</label>
+              <textarea id="note" name="note" rows="2" placeholder="Additional notes..."></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">💾 Save Follow Up</button>
+            <button type="button" class="btn btn-ghost" id="btn-clear">🗑 Clear Form</button>
+          </div>
+          <div id="form-msg" class="msg" role="status"></div>
+        </form>
+      </section>
+
+      <section id="panel-history" class="panel" role="tabpanel">
+        <div class="history-toolbar">
+          <span style="font-size:0.9rem;">📋 Select a lead</span>
+          <button type="button" class="btn btn-ghost" id="btn-refresh" style="padding: 0.6rem 1rem;">🔄 Refresh</button>
+        </div>
+        
+        <div id="person-filter-wrap" class="person-filter-wrap" style="display: none">
+          <span class="person-filter-label">👥 Filter by person:</span>
+          <div class="person-filter-buttons">
+            <button type="button" class="person-filter-btn active" data-person="all">All</button>
+            <button type="button" class="person-filter-btn" data-person="Allan">Allan</button>
+            <button type="button" class="person-filter-btn" data-person="Susie">Susie</button>
+            <button type="button" class="person-filter-btn" data-person="CongSheng">CongSheng</button>
+          </div>
+        </div>
+        <div id="history-filter-empty" class="empty" style="display: none"></div>
+        <div id="history-chips" class="chip-scroll"></div>
+        <div id="history-detail"></div>
+        <div id="history-loading" class="loading" style="display: none">Loading...</div>
+        <div id="history-empty" class="empty" style="display: none">No follow ups yet. Add one above.</div>
+      </section>
+
+      <section id="panel-chart" class="panel" role="tabpanel">
+        <div class="viz-toolbar">
+          <button type="button" class="btn btn-ghost" id="btn-refresh-chart">🔄 Refresh Charts</button>
+        </div>
+        <div id="chart-loading" class="loading" style="display: none">Loading charts...</div>
+        <div id="chart-empty" class="empty" style="display: none">No data to chart yet.</div>
+        <div id="chart-container"></div>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        var state = { items: [], selectedId: null, personFilter: 'all' };
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+
+        function showPanel(name) {
+          var panels = document.querySelectorAll('.panel');
+          var tabs = document.querySelectorAll('.main-tabs button');
+          panels.forEach(function (p) {
+            p.classList.toggle('active', p.id === 'panel-' + name);
+          });
+          tabs.forEach(function (b) {
+            var on = b.getAttribute('data-panel') === name;
+            b.classList.toggle('active', on);
+          });
+          if (name === 'history') loadHistory();
+          if (name === 'chart') loadVisualization();
+        }
+
+        document.querySelectorAll('.main-tabs button').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            showPanel(btn.getAttribute('data-panel'));
+          });
+        });
+
+        function setMsg(text, type) {
+          var el = $('form-msg');
+          el.className = 'msg' + (type ? ' ' + type : '');
+          el.textContent = text || '';
+          if (!type) el.style.display = 'none';
+        }
+
+        document.getElementById('form-new').addEventListener('submit', function (e) {
+          e.preventDefault();
+          setMsg('');
+          var f = e.target;
+          if (!f.leadName.value.trim() || !f.customerReply.value || !f.customerType.value || !f.personFollowUp.value || !f.savedContact.value) {
+            setMsg('Please fill all required fields (marked with *)', 'err');
+            return;
+          }
+          var data = {
+            leadName: f.leadName.value,
+            customerReply: f.customerReply.value,
+            customerType: f.customerType.value,
+            personFollowUp: f.personFollowUp.value,
+            savedContact: f.savedContact.value,
+            customerPhone: f.customerPhone.value,
+            address: f.address.value,
+            dateAcquired: f.dateAcquired.value,
+            noteAverageBill: f.noteAverageBill.value,
+            noteCall: f.noteCall.value,
+            proposalSize: f.proposalSize.value,
+            proposalPrice: f.proposalPrice.value,
+            panelPcs: f.panelPcs.value,
+            expectedSaving: f.expectedSaving.value,
+            note: f.note.value
+          };
+          var btn = f.querySelector('button[type="submit"]');
+          btn.disabled = true;
+          btn.textContent = 'Saving...';
+          google.script.run
+            .withSuccessHandler(function () {
+              btn.disabled = false;
+              btn.textContent = '💾 Save Follow Up';
+              setMsg('✓ Saved successfully!', 'ok');
+              f.reset();
+              setTimeout(function() { setMsg('', ''); }, 3000);
+            })
+            .withFailureHandler(function (err) {
+              btn.disabled = false;
+              btn.textContent = '💾 Save Follow Up';
+              setMsg('Error: ' + (err && err.message || String(err)), 'err');
+            })
+            .saveFollowUp(data);
+        });
+
+        $('btn-clear').addEventListener('click', function () {
+          $('form-new').reset();
+          setMsg('');
+        });
+
+        function replyBadgeClass(reply) {
+          var r = String(reply || '').toLowerCase().replace(/\s+/g, '_');
+          if (r === 'sheet' || r === 'legacy') return 'badge-default';
+          if (r === 'to_follow_up') r = 'tofollowup';
+          if (r.indexOf('consider') >= 0) return 'badge-considering';
+          if (r.indexOf('accept') >= 0) return 'badge-accept';
+          if (r.indexOf('reject') >= 0) return 'badge-reject';
+          if (r.indexOf('follow') >= 0) return 'badge-tofollowup';
+          return 'badge-default';
+        }
+
+        var STATUS_OPTIONS = ['considering', 'accept', 'reject', 'to follow up'];
+
+        function normalizeStatus_(v) {
+          var s = String(v || '').toLowerCase().trim().replace(/\s+/g, ' ');
+          if (!s) return '';
+          if (s === 'to_follow_up') s = 'to follow up';
+          return s;
+        }
+
+        function personChipLabel_(it) {
+          return String(it.personFollowUp || '').trim() || '—';
+        }
+
+        function replyBadgeSource_(it) {
+          if (it.isLegacy && !String(it.customerReply || '').trim()) return 'sheet';
+          return it.customerReply || '';
+        }
+
+        function personFilterIsAll_() {
+          return !state.personFilter || state.personFilter === 'all';
+        }
+
+        function getHistoryItemsForChips_() {
+          if (personFilterIsAll_()) return state.items;
+          return state.items.filter(function (it) {
+            return String(it.personFollowUp || '').trim() === state.personFilter;
+          });
+        }
+
+        function updatePersonFilterButtons_() {
+          var wrap = $('person-filter-wrap');
+          if (!wrap) return;
+          var cur = state.personFilter || 'all';
+          wrap.querySelectorAll('.person-filter-btn').forEach(function (b) {
+            var p = b.getAttribute('data-person') || 'all';
+            b.classList.toggle('active', p === cur);
+          });
+        }
+
+        function formatDate(ts) {
+          if (ts == null) return '—';
+          var d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
+          if (isNaN(d.getTime())) return '—';
+          return d.toLocaleDateString();
+        }
+
+        function formatDateTime(ts) {
+          if (ts == null) return '—';
+          var d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
+          if (isNaN(d.getTime())) return '—';
+          return d.toLocaleString();
+        }
+
+        function formatDateOrText(item) {
+          if (item && item.dateAcquiredText) return String(item.dateAcquiredText);
+          return formatDate(item && item.dateAcquired);
+        }
+
+        function renderChips() {
+          var host = $('history-chips');
+          var filterEmpty = $('history-filter-empty');
+          var wrap = $('person-filter-wrap');
+          host.innerHTML = '';
+          if (filterEmpty) filterEmpty.style.display = 'none';
+          if (wrap) wrap.style.display = state.items.length ? '' : 'none';
+          
+          updatePersonFilterButtons_();
+          var list = getHistoryItemsForChips_();
+          
+          if (!state.items.length) {
+            state.selectedId = null;
+            renderDetail(null);
+            return;
+          }
+          
+          if (!list.length) {
+            if (filterEmpty) {
+              filterEmpty.style.display = 'block';
+              filterEmpty.innerHTML = 'No leads for ' + escapeHtml(state.personFilter);
+            }
+            state.selectedId = null;
+            renderDetail(null);
+            return;
+          }
+          
+          for (var i = 0; i < list.length; i++) {
+            var it = list[i];
+            var btn = document.createElement('button');
+            btn.className = 'chip';
+            btn.setAttribute('data-id', it.id);
+            
+            var nameSpan = document.createElement('span');
+            nameSpan.className = 'lead';
+            nameSpan.textContent = it.leadName || '(No name)';
+            
+            var replySpan = document.createElement('span');
+            replySpan.className = 'badge ' + replyBadgeClass(replyBadgeSource_(it));
+            replySpan.textContent = it.chipLabel || it.customerReply || '—';
+            
+            var personSpan = document.createElement('span');
+            personSpan.className = 'badge badge-person';
+            personSpan.textContent = personChipLabel_(it);
+            
+            btn.appendChild(nameSpan);
+            btn.appendChild(replySpan);
+            btn.appendChild(personSpan);
+            btn.onclick = (function(id) { return function() { selectItem(id); }; })(it.id);
+            host.appendChild(btn);
+          }
+          
+          if (state.selectedId && list.some(function(x) { return x.id === state.selectedId; })) {
+            selectItem(state.selectedId);
+          } else if (list.length > 0) {
+            selectItem(list[0].id);
+          }
+        }
+
+        function renderDetail(item) {
+          if (!item) {
+            $('history-detail').innerHTML = '<div class="empty">👈 Select a lead to see details</div>';
+            return;
+          }
+          
+          var label = item.chipLabel || item.customerReply || '—';
+          var badgeClass = replyBadgeClass(replyBadgeSource_(item));
+          
+          var html = '<div class="detail-card">';
+          html += '<h3>' + escapeHtml(item.leadName || '(No name)') + ' <span class="badge ' + badgeClass + '">' + escapeHtml(label) + '</span></h3>';
+          html += '<dl>';
+          
+          var fields = [
+            ['Customer Type', item.customerType],
+            ['Person Follow Up', item.personFollowUp],
+            ['Saved Contact', item.savedContact],
+            ['Phone', item.customerPhone],
+            ['Address', item.address],
+            ['Date Acquired', formatDateOrText(item)],
+            ['Avg Bill', item.noteAverageBill],
+            ['Note Call', item.noteCall],
+            ['Proposal Size', item.proposalSize],
+            ['Proposal Price', item.proposalPrice],
+            ['Panel Pcs', item.panelPcs],
+            ['Expected Saving', item.expectedSaving],
+            ['Note 2', item.note]
+          ];
+          
+          for (var i = 0; i < fields.length; i++) {
+            var val = fields[i][1];
+            if (val && val !== '') {
+              html += '<dt>' + escapeHtml(fields[i][0]) + '</dt>';
+              html += '<dd>' + escapeHtml(String(val)) + '</dd>';
+            }
+          }
+          
+          if (!item.isLegacy && item.created) {
+            html += '<dt>Created</dt><dd>' + formatDateTime(item.created) + '</dd>';
+          }
+          
+          html += '</dl>';
+          html += '<div class="status-editor">';
+          html += '<div class="status-editor-row">';
+          html += '<select id="status-reply-select"></select>';
+          html += '<button type="button" class="btn btn-primary" id="btn-update-reply">Update Status</button>';
+          html += '</div>';
+          html += '<div id="status-update-msg" class="status-msg">Update customer reply status</div>';
+          html += '</div></div>';
+          
+          $('history-detail').innerHTML = html;
+          bindStatusEditor_(item);
+        }
+
+        function bindStatusEditor_(item) {
+          var sel = $('status-reply-select');
+          var btn = $('btn-update-reply');
+          var msg = $('status-update-msg');
+          if (!sel || !btn || !msg) return;
+          
+          sel.innerHTML = '';
+          for (var i = 0; i < STATUS_OPTIONS.length; i++) {
+            var v = STATUS_OPTIONS[i];
+            var op = document.createElement('option');
+            op.value = v;
+            op.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+            sel.appendChild(op);
+          }
+          
+          var current = normalizeStatus_(item.customerReply);
+          sel.value = STATUS_OPTIONS.indexOf(current) >= 0 ? current : 'considering';
+          
+          btn.onclick = function() {
+            var nextReply = normalizeStatus_(sel.value);
+            if (!nextReply) {
+              msg.className = 'status-msg err';
+              msg.textContent = 'Please select a status';
+              return;
+            }
+            btn.disabled = true;
+            sel.disabled = true;
+            msg.className = 'status-msg';
+            msg.textContent = 'Updating...';
+            
+            google.script.run
+              .withSuccessHandler(function() {
+                var t = state.items.find(function(x) { return x.id === item.id; });
+                if (t) {
+                  t.customerReply = nextReply;
+                  t.chipLabel = nextReply;
+                }
+                btn.disabled = false;
+                sel.disabled = false;
+                msg.className = 'status-msg ok';
+                msg.textContent = '✓ Updated successfully';
+                renderChips();
+                setTimeout(function() { msg.className = 'status-msg'; msg.textContent = 'Update customer reply status'; }, 2000);
+              })
+              .withFailureHandler(function(err) {
+                btn.disabled = false;
+                sel.disabled = false;
+                msg.className = 'status-msg err';
+                msg.textContent = 'Error: ' + (err && err.message || String(err));
+              })
+              .updateCustomerReply(item.id, nextReply);
+          };
+        }
+
+        function escapeHtml(s) {
+          if (s == null) return '';
+          return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function selectItem(id) {
+          state.selectedId = id;
+          var item = state.items.find(function(x) { return x.id === id; });
+          document.querySelectorAll('.chip').forEach(function(c) {
+            c.classList.toggle('selected', c.getAttribute('data-id') === String(id));
+          });
+          renderDetail(item);
+        }
+
+        function loadHistory() {
+          $('history-loading').style.display = 'block';
+          $('history-empty').style.display = 'none';
+          $('history-chips').innerHTML = '';
+          
+          google.script.run
+            .withSuccessHandler(function(items) {
+              $('history-loading').style.display = 'none';
+              state.items = items || [];
+              if (!state.items.length) {
+                $('history-empty').style.display = 'block';
+                if ($('person-filter-wrap')) $('person-filter-wrap').style.display = 'none';
+                renderDetail(null);
+                return;
+              }
+              $('history-empty').style.display = 'none';
+              renderChips();
+            })
+            .withFailureHandler(function(err) {
+              $('history-loading').style.display = 'none';
+              $('history-detail').innerHTML = '<div class="msg err">Failed to load: ' + escapeHtml(err.message) + '</div>';
+            })
+            .getFollowUps();
+        }
+
+        $('btn-refresh').addEventListener('click', function() { loadHistory(); });
+
+        (function bindPersonFilter_() {
+          var wrap = $('person-filter-wrap');
+          if (!wrap) return;
+          wrap.addEventListener('click', function(e) {
+            var t = e.target.closest('.person-filter-btn');
+            if (!t || !wrap.contains(t)) return;
+            var p = t.getAttribute('data-person') || 'all';
+            state.personFilter = p;
+            updatePersonFilterButtons_();
+            renderChips();
+          });
+        })();
+
+        function aggregateCustomerReply_(items) {
+          var counts = { considering: 0, accept: 0, reject: 0, toFollowUp: 0, other: 0 };
+          for (var i = 0; i < (items || []).length; i++) {
+            var it = items[i];
+            var r = String(it.customerReply || '').toLowerCase().trim().replace(/\s+/g, ' ');
+            if (r === 'considering') counts.considering++;
+            else if (r === 'accept') counts.accept++;
+            else if (r === 'reject') counts.reject++;
+            else if (r === 'to follow up') counts.toFollowUp++;
+            else counts.other++;
+          }
+          return [
+            { label: 'Considering', count: counts.considering },
+            { label: 'Accept', count: counts.accept },
+            { label: 'Reject', count: counts.reject },
+            { label: 'To follow up', count: counts.toFollowUp },
+            { label: 'Other', count: counts.other }
+          ];
+        }
+
+        function renderBarChart_(series, host) {
+          var max = 0;
+          for (var i = 0; i < series.length; i++) if (series[i].count > max) max = series[i].count;
+          if (max < 1) max = 1;
+          
+          host.innerHTML = '';
+          var frame = document.createElement('div');
+          frame.className = 'reply-chart-frame';
+          
+          var yLabel = document.createElement('div');
+          yLabel.className = 'reply-chart-y-label';
+          yLabel.textContent = 'Leads';
+          
+          var main = document.createElement('div');
+          main.className = 'reply-chart-main';
+          
+          var inner = document.createElement('div');
+          inner.className = 'reply-chart-inner';
+          
+          var yAxis = document.createElement('div');
+          yAxis.className = 'reply-chart-y';
+          yAxis.innerHTML = '<span>' + max + '</span><span>' + Math.round(max/2) + '</span><span>0</span>';
+          
+          var bars = document.createElement('div');
+          bars.className = 'reply-chart-bars';
+          
+          for (var i = 0; i < series.length; i++) {
+            var s = series[i];
+            var h = Math.round((180 * s.count) / max);
+            if (s.count > 0 && h < 4) h = 4;
+            
+            var col = document.createElement('div');
+            col.className = 'reply-chart-col';
+            
+            var cnt = document.createElement('div');
+            cnt.className = 'reply-chart-count';
+            cnt.textContent = s.count;
+            
+            var bar = document.createElement('div');
+            bar.className = 'reply-chart-bar';
+            bar.style.height = h + 'px';
+            
+            var label = document.createElement('div');
+            label.className = 'reply-chart-xlabel';
+            label.textContent = s.label;
+            
+            col.appendChild(cnt);
+            col.appendChild(bar);
+            col.appendChild(label);
+            bars.appendChild(col);
+          }
+          
+          inner.appendChild(yAxis);
+          inner.appendChild(bars);
+          main.appendChild(inner);
+          frame.appendChild(yLabel);
+          frame.appendChild(main);
+          host.appendChild(frame);
+        }
+
+        function aggregatePersonFollowUp_(items) {
+          var counts = { Allan: 0, Susie: 0, CongSheng: 0, other: 0 };
+          for (var i = 0; i < (items || []).length; i++) {
+            var p = String(items[i].personFollowUp || '').trim();
+            if (p === 'Allan') counts.Allan++;
+            else if (p === 'Susie') counts.Susie++;
+            else if (p === 'CongSheng') counts.CongSheng++;
+            else if (p) counts.other++;
+          }
+          return [
+            { label: 'Allan', count: counts.Allan },
+            { label: 'Susie', count: counts.Susie },
+            { label: 'CongSheng', count: counts.CongSheng },
+            { label: 'Other', count: counts.other }
+          ];
+        }
+
+        function loadVisualization() {
+          $('chart-loading').style.display = 'block';
+          $('chart-empty').style.display = 'none';
+          $('chart-container').innerHTML = '';
+          
+          google.script.run
+            .withSuccessHandler(function(items) {
+              $('chart-loading').style.display = 'none';
+              items = items || [];
+              var total = items.length;
+              if (total === 0) {
+                $('chart-empty').style.display = 'block';
+                return;
+              }
+              
+              var container = $('chart-container');
+              container.innerHTML = '';
+              
+              var replyBlock = document.createElement('div');
+              replyBlock.className = 'viz-chart-block';
+              var replyTitle = document.createElement('h4');
+              replyTitle.className = 'viz-chart-heading';
+              replyTitle.textContent = 'By Customer Reply';
+              var replyChart = document.createElement('div');
+              renderBarChart_(aggregateCustomerReply_(items), replyChart);
+              var replyCaption = document.createElement('p');
+              replyCaption.className = 'viz-axis-title';
+              replyCaption.textContent = 'Total: ' + total + ' leads';
+              replyBlock.appendChild(replyTitle);
+              replyBlock.appendChild(replyChart);
+              replyBlock.appendChild(replyCaption);
+              container.appendChild(replyBlock);
+              
+              var personBlock = document.createElement('div');
+              personBlock.className = 'viz-chart-block';
+              var personTitle = document.createElement('h4');
+              personTitle.className = 'viz-chart-heading';
+              personTitle.textContent = 'By Person Follow Up';
+              var personChart = document.createElement('div');
+              renderBarChart_(aggregatePersonFollowUp_(items), personChart);
+              var personCaption = document.createElement('p');
+              personCaption.className = 'viz-axis-title';
+              personCaption.textContent = 'Total: ' + total + ' leads';
+              personBlock.appendChild(personTitle);
+              personBlock.appendChild(personChart);
+              personBlock.appendChild(personCaption);
+              container.appendChild(personBlock);
+            })
+            .withFailureHandler(function(err) {
+              $('chart-loading').style.display = 'none';
+              $('chart-container').innerHTML = '<div class="msg err">Failed to load charts: ' + escapeHtml(err.message) + '</div>';
+            })
+            .getFollowUps();
+        }
+
+        $('btn-refresh-chart').addEventListener('click', function() { loadVisualization(); });
+      })();
+    </script>
+  </body>
+</html>
