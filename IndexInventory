@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+  <title>Inventory Management</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 16px;
+      padding-bottom: 80px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: white;
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #666;
+    }
+    
+    .tab.active {
+      background: #1a73e8;
+      color: white;
+    }
+    
+    /* Panels */
+    .panel {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    
+    .panel.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a73e8;
+      border-left: 4px solid #1a73e8;
+      padding-left: 12px;
+    }
+    
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    label.required:after {
+      content: " *";
+      color: #d93025;
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+    
+    input:read-only {
+      background: #f5f5f5;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+    
+    .radio-group input {
+      width: auto;
+    }
+    
+    button.submit {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    button.submit:hover {
+      transform: translateY(-1px);
+    }
+    
+    button.submit:disabled {
+      opacity: 0.6;
+      transform: none;
+      cursor: not-allowed;
+    }
+    
+    /* Stock Table Styles */
+    .category-section {
+      margin-bottom: 24px;
+    }
+    
+    .category-header {
+      background: #e8f0fe;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1a73e8;
+    }
+    
+    .stock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #e8f0fe;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1a73e8;
+      font-size: 13px;
+    }
+    
+    .stock-header-item {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .stock-header-item:first-child {
+      text-align: left;
+      flex: 2;
+    }
+    
+    .stock-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s, transform 0.1s;
+      cursor: pointer;
+    }
+    
+    .stock-row:hover {
+      background: #f8f9fa;
+    }
+    
+    .stock-row:active {
+      transform: scale(0.99);
+    }
+    
+    .stock-col {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .stock-col:first-child {
+      text-align: left;
+      flex: 2;
+    }
+    
+    .reserved-col {
+      color: #f9ab00;
+      font-weight: 500;
+    }
+    
+    .remaining-col {
+      font-weight: bold;
+    }
+    
+    .remaining-col.positive {
+      color: #0f9d58;
+    }
+    
+    .remaining-col.warning {
+      color: #d93025;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .status-good {
+      background: #e6f4ea;
+      color: #0f9d58;
+    }
+    
+    .status-medium {
+      background: #fef7e0;
+      color: #f9ab00;
+    }
+    
+    .status-low {
+      background: #fce8e6;
+      color: #d93025;
+    }
+    
+    /* Material Order Styles */
+    .material-category-section {
+      margin-bottom: 24px;
+    }
+
+    .material-category-header {
+      background: #e8f0fe;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1a73e8;
+    }
+
+    .material-order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #e8f0fe;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1a73e8;
+      font-size: 13px;
+    }
+
+    .material-order-header-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .material-order-header-item:first-child {
+      text-align: left;
+      flex: 2;
+    }
+
+    .material-order-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s;
+    }
+
+    .material-order-row:hover {
+      background: #f8f9fa;
+    }
+
+    .material-order-col {
+      flex: 1;
+      text-align: center;
+    }
+
+    .material-order-col:first-child {
+      text-align: left;
+      flex: 2;
+    }
+
+    /* Status Colors */
+    .status-order-placed {
+      background: #fce8e6;
+      color: #d93025;
+    }
+    
+    .status-shipping {
+      background: #fef7e0;
+      color: #f9ab00;
+    }
+    
+    .status-received {
+      background: #e6f4ea;
+      color: #0f9d58;
+    }
+    
+    .order-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    /* Search Bar */
+    .search-box {
+      margin-bottom: 16px;
+    }
+    
+    .search-box input {
+      padding-left: 40px;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>');
+      background-repeat: no-repeat;
+      background-position: 12px center;
+    }
+    
+    /* Alert */
+    .alert {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .alert.show {
+      display: block;
+      animation: slideDown 0.3s;
+    }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .alert-warning {
+      background: #fef7e0;
+      border-left: 4px solid #f9ab00;
+      color: #e37400;
+    }
+    
+    .alert-success {
+      background: #e6f4ea;
+      border-left: 4px solid #0f9d58;
+      color: #0f9d58;
+    }
+    
+    .alert-error {
+      background: #fce8e6;
+      border-left: 4px solid #d93025;
+      color: #d93025;
+    }
+    
+    /* Photo Preview */
+    .photo-preview {
+      max-width: 100%;
+      max-height: 200px;
+      margin-top: 10px;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .stat-card h4 {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background-color: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80%;
+      overflow-y: auto;
+      animation: slideUp 0.3s;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+    }
+    
+    .modal-close {
+      font-size: 28px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .reservation-stats {
+      background: #f0f2f5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+    
+    .stat-label {
+      font-weight: 600;
+    }
+    
+    .stat-value {
+      font-weight: bold;
+    }
+    
+    .stat-value.warning {
+      color: #d93025;
+    }
+    
+    .stat-value.success {
+      color: #0f9d58;
+    }
+    
+    .reservation-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .reservation-info {
+      flex: 1;
+    }
+    
+    .reservation-name {
+      font-weight: 600;
+    }
+    
+    .reservation-qty {
+      color: #f9ab00;
+      font-weight: bold;
+    }
+    
+    /* Transaction History Styles */
+    .filter-group {
+      margin-bottom: 20px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .filter-group select {
+      width: 100%;
+      max-width: 200px;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .history-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .history-stat-card {
+      background: #f0f2f5;
+      padding: 12px 20px;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .history-stat-card .stat-label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .history-stat-card .stat-value {
+      display: block;
+      font-size: 20px;
+      font-weight: bold;
+      color: #1a73e8;
+    }
+
+    .transaction-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #e8f0fe;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1a73e8;
+      font-size: 13px;
+    }
+
+    .transaction-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s;
+    }
+
+    .transaction-row:hover {
+      background: #f8f9fa;
+    }
+
+    .transaction-col {
+      flex: 1;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .transaction-col:first-child {
+      text-align: left;
+      flex: 1.2;
+    }
+
+    .transaction-type {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .transaction-type.in {
+      background: #e6f4ea;
+      color: #0f9d58;
+    }
+
+    .transaction-type.out {
+      background: #fce8e6;
+      color: #d93025;
+    }
+
+    @media (max-width: 700px) {
+      .transaction-header {
+        display: none;
+      }
+      
+      .transaction-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      
+      .transaction-col {
+        text-align: left;
+        width: 100%;
+      }
+      
+      .transaction-col:before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: inline-block;
+        width: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>☀️ Inventory Management</h1>
+    </div>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('entry')">📝 In/Out</button>
+      <button class="tab" onclick="switchTab('stock')">📊 Current Stock</button>
+      <button class="tab" onclick="switchTab('material')">📦 Material Order</button>
+      <button class="tab" onclick="switchTab('history')">📜 Transaction History</button>
+    </div>
+    
+    <!-- New Entry Panel -->
+    <div id="entryPanel" class="panel active">
+      <div class="card">
+        <div class="card-title">Record Transaction</div>
+        <div id="alertMessage"></div>
+        
+        <form id="entryForm">
+          <div class="form-group">
+            <label class="required">Name</label>
+            <input type="text" id="userName" required placeholder="Enter your name">
+          </div>
+          
+          <div class="form-group">
+            <label class="required">Category</label>
+            <select id="category" required onchange="updateItems()">
+              <option value="">Select Category</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="required">Item Name</label>
+            <select id="itemName" required onchange="updateCurrentStock()">
+              <option value="">Select Item</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Current Stock</label>
+            <input type="text" id="currentStockDisplay" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label class="required">Transaction Type</label>
+            <div class="radio-group">
+              <label><input type="radio" name="inOut" value="In" required> 📥 Stock In (Add)</label>
+              <label><input type="radio" name="inOut" value="Out"> 📤 Stock Out (Remove)</label>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="required">Quantity</label>
+            <input type="number" id="quantity" min="1" required placeholder="Enter quantity">
+          </div>
+          
+          <div class="form-group">
+            <label>Remark</label>
+            <textarea id="remark" rows="3" placeholder="Additional notes..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Photo (Optional)</label>
+            <input type="file" id="photo" accept="image/*" capture="environment" onchange="previewPhoto(this)">
+            <img id="photoPreview" class="photo-preview">
+          </div>
+          
+          <button type="submit" class="submit" id="submitBtn">Record Transaction</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Current Stock Panel -->
+    <div id="stockPanel" class="panel">
+      <div class="card">
+        <div class="card-title">Current Inventory Stock</div>
+        
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <h4>Total Categories</h4>
+            <div class="stat-number" id="totalCategories">0</div>
+          </div>
+          <div class="stat-card">
+            <h4>Total Items</h4>
+            <div class="stat-number" id="totalItems">0</div>
+          </div>
+          <div class="stat-card">
+            <h4>Low Stock Items</h4>
+            <div class="stat-number" id="lowStockItems">0</div>
+          </div>
+          <div class="stat-card">
+            <h4>Out of Stock</h4>
+            <div class="stat-number" id="outOfStockItems">0</div>
+          </div>
+        </div>
+        
+        <div class="search-box">
+          <input type="text" id="searchStock" placeholder="🔍 Search by item name or category..." onkeyup="filterStock()">
+        </div>
+        <div id="stockList" class="loading">Loading stock levels...</div>
+      </div>
+    </div>
+    
+    <!-- Material Order Panel -->
+    <div id="materialPanel" class="panel">
+      <div class="card">
+        <div class="card-title">📦 Material Orders</div>
+        
+        <div class="stats-grid" id="materialStatsGrid">
+          <div class="stat-card">
+            <h4>Total Orders</h4>
+            <div class="stat-number" id="totalOrders">0</div>
+          </div>
+          <div class="stat-card">
+            <h4>Total Units</h4>
+            <div class="stat-number" id="totalOrderUnits">0</div>
+          </div>
+          <div class="stat-card">
+            <h4>Categories</h4>
+            <div class="stat-number" id="orderCategories">0</div>
+          </div>
+        </div>
+        
+        <div class="search-box">
+          <input type="text" id="searchMaterial" placeholder="🔍 Search by item name or category..." onkeyup="filterMaterialOrders()">
+        </div>
+        <div id="materialList" class="loading">Loading material orders...</div>
+      </div>
+    </div>
+    
+    <!-- Transaction History Panel -->
+    <div id="historyPanel" class="panel">
+      <div class="card">
+        <div class="card-title">Transaction History</div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+          <select id="filterYear" onchange="loadTransactions()">
+            <option value="-1">All Years</option>
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+          </select>
+
+          <select id="filterMonth" onchange="loadTransactions()">
+            <option value="-1">All Months</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+          </select>
+        </div>
+
+        <div id="transactionList">
+          <p style="text-align:center; color:#666; padding:20px">Loading transactions...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reservation Modal -->
+  <div id="reservationModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalItemTitle">Item Reservations</h3>
+        <span class="modal-close" onclick="closeReservationModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div id="reservationStats" class="reservation-stats"></div>
+        <div id="reservationList" class="reservation-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let inventoryData = null;
+    let photoData = null;
+    
+    // Reservation modal variables
+    let currentCategory = '';
+    let currentItemName = '';
+    let currentStock = 0;
+    
+    // Initialize
+    window.onload = function() {
+      loadInventoryData();
+    };
+    
+    function switchTab(tabName) {
+      const tabs = document.querySelectorAll('.tab');
+      const panels = document.querySelectorAll('.panel');
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      
+      if (tabName === 'entry') {
+        tabs[0].classList.add('active');
+        document.getElementById('entryPanel').classList.add('active');
+      } else if (tabName === 'stock') {
+        tabs[1].classList.add('active');
+        document.getElementById('stockPanel').classList.add('active');
+        loadStockLevels();
+      } else if (tabName === 'material') {
+        tabs[2].classList.add('active');
+        document.getElementById('materialPanel').classList.add('active');
+        loadMaterialOrders();
+      } else if (tabName === 'history') {
+        tabs[3].classList.add('active');
+        document.getElementById('historyPanel').classList.add('active');
+        loadTransactionHistory();
+      }
+    }
+    
+    function loadInventoryData() {
+      google.script.run
+        .withSuccessHandler(function(data) {
+          inventoryData = data;
+          populateCategories();
+        })
+        .withFailureHandler(function(error) {
+          showAlert('Error loading inventory: ' + error.message, 'error');
+        })
+        .getInventoryData();
+    }
+    
+    function populateCategories() {
+      const categorySelect = document.getElementById('category');
+      categorySelect.innerHTML = '<option value="">Select Category</option>';
+      
+      if (inventoryData && inventoryData.categories) {
+        inventoryData.categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          categorySelect.appendChild(option);
+        });
+      }
+    }
+    
+    function updateItems() {
+      const category = document.getElementById('category').value;
+      const itemSelect = document.getElementById('itemName');
+      const currentStockDisplay = document.getElementById('currentStockDisplay');
+      
+      itemSelect.innerHTML = '<option value="">Select Item</option>';
+      currentStockDisplay.value = '';
+      
+      if (category && inventoryData && inventoryData.itemsByCategory[category]) {
+        inventoryData.itemsByCategory[category].forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.name;
+          option.textContent = `${item.name} (Stock: ${item.quantity})`;
+          option.setAttribute('data-quantity', item.quantity);
+          itemSelect.appendChild(option);
+        });
+      }
+    }
+    
+    function updateCurrentStock() {
+      const itemSelect = document.getElementById('itemName');
+      const selected = itemSelect.options[itemSelect.selectedIndex];
+      const qty = selected.getAttribute('data-quantity');
+      if (qty !== undefined) {
+        document.getElementById('currentStockDisplay').value = qty;
+      }
+    }
+    
+    function previewPhoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('photoPreview').src = e.target.result;
+          document.getElementById('photoPreview').style.display = 'block';
+          photoData = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+    
+    document.getElementById('entryForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      
+      const data = {
+        userName: document.getElementById('userName').value,
+        category: document.getElementById('category').value,
+        itemName: document.getElementById('itemName').value,
+        inOut: document.querySelector('input[name="inOut"]:checked').value,
+        quantity: document.getElementById('quantity').value,
+        remark: document.getElementById('remark').value,
+        photoUrl: ''
+      };
+      
+      if (photoData) {
+        const fileName = `inventory_${Date.now()}.jpg`;
+        google.script.run
+          .withSuccessHandler(url => {
+            data.photoUrl = url;
+            saveTransaction(data);
+          })
+          .withFailureHandler(() => saveTransaction(data))
+          .uploadPhoto(photoData, fileName);
+      } else {
+        saveTransaction(data);
+      }
+    });
+    
+    function saveTransaction(data) {
+      google.script.run
+        .withSuccessHandler(result => {
+          showAlert(result.message, 'success');
+          if (result.alert) {
+            showAlert(result.alert, 'warning');
+          }
+          document.getElementById('entryForm').reset();
+          document.getElementById('photoPreview').style.display = 'none';
+          document.getElementById('currentStockDisplay').value = '';
+          photoData = null;
+          loadInventoryData();
+          
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').textContent = 'Record Transaction';
+        })
+        .withFailureHandler(err => {
+          showAlert('Error: ' + err.message, 'error');
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').textContent = 'Record Transaction';
+        })
+        .addTransaction(data);
+    }
+    
+    function showAlert(message, type) {
+      const alertDiv = document.getElementById('alertMessage');
+      alertDiv.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+      setTimeout(() => {
+        alertDiv.innerHTML = '';
+      }, 5000);
+    }
+    
+    function loadStockLevels() {
+      document.getElementById('stockList').innerHTML = '<div class="loading">Loading...</div>';
+      
+      google.script.run
+        .withSuccessHandler(stock => {
+          if (Object.keys(stock).length === 0) {
+            document.getElementById('stockList').innerHTML = '<p>No inventory items found.</p>';
+            updateStats(0, 0, 0, 0);
+            return;
+          }
+          
+          let totalCategories = 0;
+          let totalItems = 0;
+          let lowStockCount = 0;
+          let outOfStockCount = 0;
+          
+          let html = '';
+          
+          for (const [category, items] of Object.entries(stock)) {
+            totalCategories++;
+            totalItems += items.length;
+            
+            html += `<div class="category-section">
+              <div class="category-header">📁 ${category}</div>
+              <div class="stock-header">
+                <div class="stock-header-item">Item Name</div>
+                <div class="stock-header-item">Stock</div>
+                <div class="stock-header-item">Reserved</div>
+                <div class="stock-header-item">Remaining</div>
+                <div class="stock-header-item">Status</div>
+              </div>`;
+            
+            items.forEach(item => {
+              let remainingClass = 'positive';
+              if (item.remaining === 0) {
+                remainingClass = 'warning';
+                outOfStockCount++;
+              } else if (item.remaining < 10) {
+                remainingClass = 'warning';
+                lowStockCount++;
+              }
+              
+              let statusClass = 'status-good';
+              let statusText = 'Good';
+              if (item.remaining === 0) {
+                statusClass = 'status-low';
+                statusText = 'Out of Stock';
+              } else if (item.remaining < 10) {
+                statusClass = 'status-low';
+                statusText = 'Low Stock';
+              } else if (item.remaining < 50) {
+                statusClass = 'status-medium';
+                statusText = 'Medium Stock';
+              }
+              
+              html += `
+                <div class="stock-row" 
+                     onclick="showReservationModal('${escapeHtml(category)}', '${escapeHtml(item.name)}', ${item.quantity})">
+                  <div class="stock-col" style="text-align: left; font-weight: 500;">${escapeHtml(item.name)}</div>
+                  <div class="stock-col">${item.quantity}</div>
+                  <div class="stock-col reserved-col">${item.reserved}</div>
+                  <div class="stock-col remaining-col ${remainingClass}">${item.remaining}</div>
+                  <div class="stock-col"><span class="status-badge ${statusClass}">${statusText}</span></div>
+                </div>
+              `;
+            });
+            
+            html += `</div>`;
+          }
+          
+          document.getElementById('stockList').innerHTML = html;
+          updateStats(totalCategories, totalItems, lowStockCount, outOfStockCount);
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('stockList').innerHTML = '<p>Error loading stock levels.</p>';
+        })
+        .getStockLevelsWithReservations();
+    }
+    
+    function updateStats(totalCategories, totalItems, lowStockCount, outOfStockCount) {
+      document.getElementById('totalCategories').textContent = totalCategories;
+      document.getElementById('totalItems').textContent = totalItems;
+      document.getElementById('lowStockItems').textContent = lowStockCount;
+      document.getElementById('outOfStockItems').textContent = outOfStockCount;
+    }
+    
+    function filterStock() {
+      const searchTerm = document.getElementById('searchStock').value.toLowerCase();
+      const rows = document.querySelectorAll('.stock-row');
+      
+      rows.forEach(row => {
+        const itemName = row.querySelector('.stock-col:first-child')?.textContent.toLowerCase() || '';
+        if (itemName.includes(searchTerm)) {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+    
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // ==================== RESERVATION MODAL FUNCTIONS ====================
+    
+    function showReservationModal(category, itemName, stock) {
+      currentCategory = category;
+      currentItemName = itemName;
+      currentStock = stock;
+      
+      document.getElementById('modalItemTitle').innerHTML = `${category}: ${itemName}`;
+      document.getElementById('reservationModal').style.display = 'flex';
+      
+      loadReservations();
+    }
+    
+    function closeReservationModal() {
+      document.getElementById('reservationModal').style.display = 'none';
+    }
+    
+    function loadReservations() {
+      google.script.run
+        .withSuccessHandler(displayReservations)
+        .getReservations(currentCategory, currentItemName);
+    }
+    
+    function displayReservations(result) {
+      const reservations = result.reservations;
+      const totalReserved = result.totalReserved;
+      const remaining = currentStock - totalReserved;
+      
+      let statsHtml = `
+        <div class="stat-row">
+          <span class="stat-label">Total Stock:</span>
+          <span class="stat-value">${currentStock}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Total Reserved:</span>
+          <span class="stat-value">${totalReserved}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Remaining Available:</span>
+          <span class="stat-value ${remaining < 0 ? 'warning' : 'success'}">${remaining}</span>
+        </div>
+      `;
+      
+      if (remaining < 0) {
+        statsHtml += `
+          <div class="stat-row">
+            <span class="stat-label" style="color: #d93025;">⚠️ OVER RESERVED:</span>
+            <span class="stat-value warning">Reserved exceeds stock by ${Math.abs(remaining)} units!</span>
+          </div>
+        `;
+      } else if (remaining < 10 && remaining > 0) {
+        statsHtml += `
+          <div class="stat-row">
+            <span class="stat-label" style="color: #f9ab00;">⚠️ LOW STOCK:</span>
+            <span class="stat-value" style="color: #f9ab00;">Only ${remaining} units remaining!</span>
+          </div>
+        `;
+      }
+      
+      document.getElementById('reservationStats').innerHTML = statsHtml;
+      
+      if (reservations.length === 0) {
+        document.getElementById('reservationList').innerHTML = '<p>No reservations for this item.</p>';
+      } else {
+        let listHtml = '<h4>Current Reservations</h4>';
+        
+        reservations.forEach((res, index) => {
+          listHtml += `
+            <div class="reservation-item">
+              <div class="reservation-info">
+                <div class="reservation-name">${escapeHtml(res.reservedBy)}</div>
+              </div>
+              <div class="reservation-qty">${res.quantity} units</div>
+            </div>
+          `;
+        });
+        
+        document.getElementById('reservationList').innerHTML = listHtml;
+      }
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('reservationModal');
+      if (event.target === modal) {
+        closeReservationModal();
+      }
+    }
+    
+    // ==================== MATERIAL ORDER FUNCTIONS ====================
+    
+    function loadMaterialOrders() {
+      document.getElementById('materialList').innerHTML = '<div class="loading">Loading material orders...</div>';
+      
+      google.script.run
+        .withSuccessHandler(displayMaterialOrders)
+        .withFailureHandler(function(error) {
+          document.getElementById('materialList').innerHTML = '<p>Error loading material orders.</p>';
+        })
+        .getMaterialOrders();
+    }
+    
+    function displayMaterialOrders(orders) {
+      if (orders.length === 0) {
+        document.getElementById('materialList').innerHTML = '<p>No material orders found.</p>';
+        updateMaterialStats(0, 0, 0);
+        return;
+      }
+      
+      // Group orders by category
+      const ordersByCategory = {};
+      
+      orders.forEach(order => {
+        if (!ordersByCategory[order.category]) {
+          ordersByCategory[order.category] = [];
+        }
+        ordersByCategory[order.category].push(order);
+      });
+      
+      let totalUnits = 0;
+      orders.forEach(order => totalUnits += order.quantity);
+      
+      updateMaterialStats(orders.length, totalUnits, Object.keys(ordersByCategory).length);
+      
+      let html = '';
+      
+      // Loop through each category
+      for (const [category, categoryOrders] of Object.entries(ordersByCategory)) {
+        html += `
+          <div class="material-category-section">
+            <div class="material-category-header">📁 ${escapeHtml(category)}</div>
+            <div class="material-order-header">
+              <div class="material-order-header-item">Item Name</div>
+              <div class="material-order-header-item">Quantity</div>
+              <div class="material-order-header-item">Status</div>
+            </div>
+        `;
+        
+        // Loop through items in this category
+        categoryOrders.forEach(order => {
+          let statusClass = '';
+          let statusText = order.status;
+          
+          switch(order.status) {
+            case 'Order placed':
+              statusClass = 'status-order-placed';
+              break;
+            case 'Shipping in progress':
+              statusClass = 'status-shipping';
+              break;
+            case 'Received':
+              statusClass = 'status-received';
+              break;
+            default:
+              statusClass = 'status-low';
+          }
+          
+          html += `
+            <div class="material-order-row" data-name="${order.itemName.toLowerCase()} ${category.toLowerCase()}">
+              <div class="material-order-col" style="text-align: left; font-weight: 500;">${escapeHtml(order.itemName)}</div>
+              <div class="material-order-col">${order.quantity}</div>
+              <div class="material-order-col"><span class="order-status ${statusClass}">${escapeHtml(statusText)}</span></div>
+            </div>
+          `;
+        });
+        
+        html += `</div>`;
+      }
+      
+      document.getElementById('materialList').innerHTML = html;
+    }
+
+    function updateMaterialStats(totalOrders, totalUnits, categoryCount) {
+      document.getElementById('totalOrders').textContent = totalOrders;
+      document.getElementById('totalOrderUnits').textContent = totalUnits;
+      document.getElementById('orderCategories').textContent = categoryCount;
+    }
+
+    function filterMaterialOrders() {
+      const searchTerm = document.getElementById('searchMaterial').value.toLowerCase();
+      const categories = document.querySelectorAll('.material-category-section');
+      
+      categories.forEach(category => {
+        const rows = category.querySelectorAll('.material-order-row');
+        let hasMatch = false;
+        
+        rows.forEach(row => {
+          const name = row.getAttribute('data-name');
+          if (name && name.includes(searchTerm)) {
+            row.style.display = 'flex';
+            hasMatch = true;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+        
+        if (hasMatch || searchTerm === '') {
+          category.style.display = 'block';
+        } else {
+          category.style.display = 'none';
+        }
+      });
+    }
+    
+    // ========== TRANSACTION HISTORY FUNCTIONS ================
+    function loadTransactions() {
+      const month = document.getElementById('filterMonth').value;
+      const year = document.getElementById('filterYear').value;
+      const container = document.getElementById('transactionList');
+      
+      container.innerHTML = '<p style="text-align:center; padding: 20px;">Loading transactions...</p>';
+
+      google.script.run
+        .withSuccessHandler(function(transactions) {
+          if (!transactions || transactions.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:20px; color: #666;">No transactions found.</p>';
+            return;
+          }
+
+          let html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; font-size: 13px;">';
+          html += '<tr style="background:#f1f3f4; text-align:left;">' +
+                  '<th style="padding:12px 8px;">Date</th>' +
+                  '<th style="padding:12px 8px;">Item Details & Remarks</th>' +
+                  '<th style="padding:12px 8px;">Action (By)</th>' +
+                  '<th style="padding:12px 8px; text-align:right;">Qty</th>' +
+                  '</tr>';
+          
+          transactions.forEach(t => {
+            const typeColor = t.type === 'In' ? '#0f9d58' : '#d93025';
+            
+            html += `<tr style="border-bottom:1px solid #eee; vertical-align: top;">
+              <td style="padding:12px 8px; color: #666; white-space: nowrap; font-size: 11px;">${t.timestamp}</td>
+              
+              <td style="padding:12px 8px;">
+                <div style="font-size: 10px; color: #1a73e8; text-transform: uppercase; font-weight: bold; margin-bottom: 2px;">${t.category}</div>
+                
+                <div style="font-weight: 600; color: #333; font-size: 14px;">${t.itemName}</div>
+                
+                <div style="font-size: 12px; color: #666; margin-top: 6px; padding-left: 4px; border-left: 2px solid #ddd; font-style: italic;">
+                  ${t.remark ? t.remark : '<span style="color:#ccc;">No remark</span>'}
+                </div>
+              </td>
+              
+              <td style="padding:12px 8px;">
+                <span style="color: #777; font-size: 11px; display: block;">${t.user || 'System'}</span>
+                <span style="color:${typeColor}; font-weight:bold; font-size: 14px;">${t.type}</span>
+              </td>
+              
+              <td style="padding:12px 8px; text-align:right; font-weight: bold; font-size: 15px;">${t.quantity}</td>
+            </tr>`;
+          });
+          
+          html += '</table></div>';
+          container.innerHTML = html;
+        })
+        .getFilteredTransactions(month, year);
+    }
+
+    // Call this when the Transaction Tab is clicked
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize with current month/year if desired
+      const now = new Date();
+      document.getElementById('filterMonth').value = now.getMonth();
+      document.getElementById('filterYear').value = now.getFullYear();
+      loadTransactions();
+    });
+    function loadTransactionHistory() {
+      const monthFilter = document.getElementById('monthFilter');
+      if (!monthFilter) {
+        console.log('Month filter not found');
+        return;
+      }
+      
+      const month = parseInt(monthFilter.value);
+      const transactionList = document.getElementById('transactionList');
+      
+      transactionList.innerHTML = '<div class="loading">📋 Loading transactions... <br><small>Please wait...</small></div>';
+      
+      // Add timeout to show error if takes too long
+      const timeoutId = setTimeout(function() {
+        transactionList.innerHTML = '<p style="color: #d93025;">⚠️ Loading is taking too long. Please check your internet connection and refresh.</p>';
+      }, 15000); // 15 second timeout
+      
+      google.script.run
+        .withSuccessHandler(function(transactions) {
+          clearTimeout(timeoutId);
+          displayTransactions(transactions);
+        })
+        .withFailureHandler(function(error) {
+          clearTimeout(timeoutId);
+          console.error('Error:', error);
+          transactionList.innerHTML = '<p style="color: #d93025;">❌ Error loading transactions. Please refresh the page.</p>';
+        })
+        .getTransactionsByMonth(month);
+    }
+    
+    function displayTransactions(transactions) {
+      const transactionList = document.getElementById('transactionList');
+      
+      if (!transactions || transactions.length === 0) {
+        transactionList.innerHTML = '<p>📭 No transactions found for the selected period.</p>';
+        updateHistoryStats(0, 0, 0);
+        return;
+      }
+      
+      // Calculate stats
+      let totalIn = 0;
+      let totalOut = 0;
+      
+      for (let i = 0; i < transactions.length; i++) {
+        const t = transactions[i];
+        if (t.transactionType === 'In') {
+          totalIn += t.quantity;
+        } else if (t.transactionType === 'Out') {
+          totalOut += t.quantity;
+        }
+      }
+      
+      updateHistoryStats(transactions.length, totalIn, totalOut);
+      
+      // Build HTML efficiently using array join
+      let html = `
+        <div class="transaction-header">
+          <div class="transaction-col" style="text-align: left; flex: 1.2;">Date & Time</div>
+          <div class="transaction-col">Category</div>
+          <div class="transaction-col">Item Name</div>
+          <div class="transaction-col">In/Out</div>
+          <div class="transaction-col">Quantity</div>
+          <div class="transaction-col">Remark</div>
+          <div class="transaction-col">Name</div>
+        </div>
+      `;
+      
+      const rows = [];
+      for (let i = 0; i < transactions.length; i++) {
+        const t = transactions[i];
+        
+        // Format date efficiently
+        let dateStr = '';
+        if (t.timestamp instanceof Date) {
+          dateStr = `${t.timestamp.toLocaleDateString()} ${t.timestamp.toLocaleTimeString()}`;
+        } else if (t.timestamp) {
+          try {
+            const d = new Date(t.timestamp);
+            if (!isNaN(d.getTime())) {
+              dateStr = `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+            } else {
+              dateStr = String(t.timestamp);
+            }
+          } catch(e) {
+            dateStr = 'Invalid date';
+          }
+        } else {
+          dateStr = 'Unknown';
+        }
+        
+        const typeClass = t.transactionType === 'In' ? 'in' : 'out';
+        
+        rows.push(`
+          <div class="transaction-row">
+            <div class="transaction-col" style="text-align: left; flex: 1.2;" data-label="Date & Time">${escapeHtml(dateStr)}</div>
+            <div class="transaction-col" data-label="Category">${escapeHtml(t.category)}</div>
+            <div class="transaction-col" data-label="Item Name">${escapeHtml(t.itemName)}</div>
+            <div class="transaction-col" data-label="In/Out"><span class="transaction-type ${typeClass}">${t.transactionType}</span></div>
+            <div class="transaction-col" data-label="Quantity">${t.quantity}</div>
+            <div class="transaction-col" data-label="Remark">${escapeHtml(t.remark)}</div>
+            <div class="transaction-col" data-label="Name">${escapeHtml(t.userName)}</div>
+          </div>
+        `);
+      }
+      
+      html += rows.join('');
+      transactionList.innerHTML = html;
+    }
+    
+    function updateHistoryStats(totalCount, totalIn, totalOut) {
+      document.getElementById('totalTransactions').textContent = totalCount;
+      document.getElementById('totalIn').textContent = totalIn;
+      document.getElementById('totalOut').textContent = totalOut;
+    }
+    function testTransactionFetch() {
+      console.log('Testing transaction fetch...');
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Success! Transactions:', result);
+          alert(`Found ${result.length} transactions for selected month`);
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error:', error);
+          alert('Error: ' + error.message);
+        })
+        .getTransactionsByMonth(3); // 3 = April
+    }
+  </script>
+</body>
+</html>
