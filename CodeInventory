@@ -1,0 +1,718 @@
+// ==================== CONFIGURATION ====================
+const SHEET_ID = '10sTMtcuLxkIbtIQR0efFzLyhPBPp4dRqeT1ELkrGhRA';
+const SHEET_NAME = 'Stock';
+const TRANSACTIONS_SHEET = 'Transactions';
+
+// ==================== WEB APP DOGET ====================
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Inventory Management')
+    .setFaviconUrl('https://www.gstatic.com/images/branding/product/1x/keep_2020q4_48dp.png')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// ==================== SETUP FUNCTION ====================
+function setup() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let transactionsSheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+  
+  if (!transactionsSheet) {
+    transactionsSheet = ss.insertSheet(TRANSACTIONS_SHEET);
+    
+    const headers = [
+      'Timestamp', 'Category', 'Item Name', 'Transaction Type', 
+      'Quantity', 'Previous Stock', 'New Stock', 'Remark', 'Photo URL', 'User'
+    ];
+    transactionsSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    transactionsSheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  }
+  
+  return { success: true, message: 'Setup complete!' };
+}
+
+// ==================== GET INVENTORY DATA ====================
+function getInventoryData() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    
+    if (!sheet) {
+      console.error(`Sheet "${SHEET_NAME}" not found`);
+      return { categories: [], itemsByCategory: {}, inventory: [] };
+    }
+    
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) {
+      return { categories: [], itemsByCategory: {}, inventory: [] };
+    }
+    
+    const data = sheet.getRange('A2:C' + lastRow).getValues();
+    const categories = new Set();
+    const itemsByCategory = {};
+    const inventory = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const category = data[i][0];
+      const itemName = data[i][1];
+      const quantity = data[i][2];
+      
+      if (!category || !itemName) continue;
+      
+      categories.add(category);
+      
+      if (!itemsByCategory[category]) {
+        itemsByCategory[category] = [];
+      }
+      
+      itemsByCategory[category].push({
+        name: itemName,
+        quantity: typeof quantity === 'number' ? quantity : (parseInt(quantity) || 0)
+      });
+      
+      inventory.push({
+        category: category,
+        itemName: itemName,
+        quantity: typeof quantity === 'number' ? quantity : (parseInt(quantity) || 0)
+      });
+    }
+    
+    for (let cat in itemsByCategory) {
+      itemsByCategory[cat].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    return {
+      categories: Array.from(categories).sort(),
+      itemsByCategory: itemsByCategory,
+      inventory: inventory
+    };
+    
+  } catch (error) {
+    console.error('Error getting inventory data:', error);
+    return { categories: [], itemsByCategory: {}, inventory: [] };
+  }
+}
+
+// ==================== GET CURRENT STOCK LEVELS ====================
+function getStockLevels() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    
+    if (!sheet) return {};
+    
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return {};
+    
+    const data = sheet.getRange('A2:C' + lastRow).getValues();
+    const stockByCategory = {};
+    
+    for (let i = 0; i < data.length; i++) {
+      const category = data[i][0];
+      const itemName = data[i][1];
+      let quantity = data[i][2];
+      
+      if (!category || !itemName) continue;
+      
+      if (typeof quantity !== 'number') {
+        quantity = parseInt(quantity) || 0;
+      }
+      
+      if (!stockByCategory[category]) {
+        stockByCategory[category] = [];
+      }
+      
+      let status = 'Good';
+      if (quantity === 0) {
+        status = 'Out of Stock';
+      } else if (quantity < 10) {
+        status = 'Low Stock';
+      } else if (quantity < 50) {
+        status = 'Medium Stock';
+      }
+      
+      stockByCategory[category].push({
+        name: itemName,
+        quantity: quantity,
+        status: status
+      });
+    }
+    
+    return stockByCategory;
+    
+  } catch (error) {
+    console.error('Error getting stock levels:', error);
+    return {};
+  }
+}
+
+// ==================== ADD TRANSACTION ====================
+function addTransaction(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const inventorySheet = ss.getSheetByName(SHEET_NAME);
+    let transactionsSheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+    
+    if (!transactionsSheet) {
+      setup();
+      transactionsSheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+    }
+    
+    const qty = parseInt(data.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      throw new Error('Quantity must be a positive number');
+    }
+    
+    const lastRow = inventorySheet.getLastRow();
+    const inventoryData = inventorySheet.getRange('A2:C' + lastRow).getValues();
+    
+    let currentStock = 0;
+    let rowIndex = -1;
+    
+    for (let i = 0; i < inventoryData.length; i++) {
+      if (inventoryData[i][0] === data.category && inventoryData[i][1] === data.itemName) {
+        currentStock = inventoryData[i][2];
+        rowIndex = i + 2;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      throw new Error('Item not found in inventory');
+    }
+    
+    let newStock = currentStock;
+    if (data.inOut === 'In') {
+      newStock = currentStock + qty;
+    } else if (data.inOut === 'Out') {
+      if (currentStock < qty) {
+        throw new Error(`Insufficient stock! Current stock: ${currentStock}, Requested: ${qty}`);
+      }
+      newStock = currentStock - qty;
+    }
+    
+    inventorySheet.getRange(rowIndex, 3).setValue(newStock);
+    
+    const timestamp = new Date();
+    const user = data.userName || Session.getActiveUser().getEmail() || 'Anonymous';
+    
+    const transactionRow = [
+      timestamp, data.category, data.itemName, data.inOut,
+      qty, currentStock, newStock, data.remark || '',
+      data.photoUrl || '', user
+    ];
+    
+    transactionsSheet.appendRow(transactionRow);
+    
+    let alert = null;
+    if (newStock < 10 && newStock > 0) {
+      alert = `⚠️ Low stock alert: ${data.itemName} has only ${newStock} units left!`;
+    } else if (newStock === 0) {
+      alert = `⚠️ Out of stock alert: ${data.itemName} is now out of stock!`;
+    }
+    
+    return {
+      success: true,
+      message: `✓ ${data.inOut}: ${qty} x ${data.itemName} (by ${user})`,
+      newStock: newStock,
+      alert: alert
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      message: '✗ Error: ' + error.toString()
+    };
+  }
+}
+
+// ==================== UPLOAD PHOTO ====================
+function uploadPhoto(base64Data, fileName) {
+  try {
+    const folderName = 'Inventory Photos';
+    let folder = DriveApp.getFoldersByName(folderName);
+    let targetFolder;
+    
+    if (folder.hasNext()) {
+      targetFolder = folder.next();
+    } else {
+      targetFolder = DriveApp.createFolder(folderName);
+    }
+    
+    const timestamp = new Date().getTime();
+    const uniqueFileName = `${timestamp}_${fileName}`;
+    
+    const blob = Utilities.newBlob(Utilities.base64Decode(base64Data.split(',')[1]), 'image/jpeg', uniqueFileName);
+    const file = targetFolder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    return file.getUrl();
+    
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    return '';
+  }
+}
+
+// ==================== DO POST FOR WEBHOOK ====================
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const result = addTransaction(data);
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ==================== GET RESERVATIONS FOR AN ITEM ====================
+function getReservations(category, itemName) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let reservationsSheet = ss.getSheetByName('Reservations');
+    
+    if (!reservationsSheet) {
+      reservationsSheet = ss.insertSheet('Reservations');
+      const headers = ['Category', 'Item Name', 'Reserved By', 'Quantity', 'Date'];
+      reservationsSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      reservationsSheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+      return { reservations: [], totalReserved: 0 };
+    }
+    
+    const lastRow = reservationsSheet.getLastRow();
+    if (lastRow < 2) return { reservations: [], totalReserved: 0 };
+    
+    const data = reservationsSheet.getRange('A2:E' + lastRow).getValues();
+    const reservations = [];
+    let totalReserved = 0;
+    
+    for (let i = 0; i < data.length; i++) {
+      // Match by category AND item name
+      const resCategory = data[i][0];
+      const resItemName = data[i][1];
+      
+      if (resCategory === category && resItemName === itemName) {
+        const qty = data[i][3];
+        reservations.push({
+          reservedBy: data[i][2],
+          quantity: qty,
+          date: data[i][4]
+        });
+        totalReserved += qty;
+      }
+    }
+    
+    // Sort reservations by date (newest first)
+    reservations.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    return {
+      reservations: reservations,
+      totalReserved: totalReserved
+    };
+    
+  } catch (error) {
+    console.error('Error getting reservations:', error);
+    return { reservations: [], totalReserved: 0 };
+  }
+}
+
+// ==================== ADD RESERVATION ====================
+function addReservation(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    let reservationsSheet = ss.getSheetByName('Reservations');
+    
+    if (!reservationsSheet) {
+      reservationsSheet = ss.insertSheet('Reservations');
+      const headers = ['Category', 'Item Name', 'Reserved By', 'Quantity', 'Date'];
+      reservationsSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      reservationsSheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    }
+    
+    const timestamp = new Date();
+    const newRow = [
+      data.category,
+      data.itemName,
+      data.reservedBy,
+      parseInt(data.quantity),
+      timestamp
+    ];
+    
+    reservationsSheet.appendRow(newRow);
+    
+    return {
+      success: true,
+      message: `✓ Reserved ${data.quantity} x ${data.itemName} for ${data.reservedBy}`
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      message: '✗ Error: ' + error.toString()
+    };
+  }
+}
+
+// ==================== DELETE RESERVATION ====================
+function deleteReservation(category, itemName, reservedBy, quantity, date) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const reservationsSheet = ss.getSheetByName('Reservations');
+    
+    if (!reservationsSheet) return { success: false, message: 'Reservations sheet not found' };
+    
+    const lastRow = reservationsSheet.getLastRow();
+    const data = reservationsSheet.getRange('A2:E' + lastRow).getValues();
+    
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i][0] === category && 
+          data[i][1] === itemName && 
+          data[i][2] === reservedBy &&
+          data[i][3] === quantity) {
+        reservationsSheet.deleteRow(i + 2);
+        return { success: true, message: 'Reservation deleted' };
+      }
+    }
+    
+    return { success: false, message: 'Reservation not found' };
+    
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+function debugReservations() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const reservationsSheet = ss.getSheetByName('Reservations');
+  
+  if (!reservationsSheet) {
+    console.log('Reservations sheet NOT FOUND!');
+    return { error: 'Reservations sheet not found' };
+  }
+  
+  const lastRow = reservationsSheet.getLastRow();
+  console.log(`Reservations sheet has ${lastRow} rows`);
+  
+  if (lastRow < 2) {
+    console.log('No data rows in Reservations sheet');
+    return { error: 'No data rows' };
+  }
+  
+  const headers = reservationsSheet.getRange(1, 1, 1, 5).getValues()[0];
+  console.log('Headers:', headers);
+  
+  const data = reservationsSheet.getRange('A2:E' + lastRow).getValues();
+  console.log(`Found ${data.length} rows of reservation data`);
+  
+  // Look specifically for the 590W panel
+  const targetItem = 'Astro N5 CHSM72N(DG)F-BH 590W';
+  const matches = [];
+  
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][1] === targetItem) {
+      matches.push({
+        row: i + 2,
+        category: data[i][0],
+        itemName: data[i][1],
+        reservedBy: data[i][2],
+        quantity: data[i][3],
+        date: data[i][4]
+      });
+    }
+  }
+  
+  console.log(`Found ${matches.length} reservations for ${targetItem}`);
+  console.log('Matches:', JSON.stringify(matches));
+  
+  return {
+    totalRows: data.length,
+    headers: headers,
+    matches: matches,
+    sampleData: data.slice(0, 5)
+  };
+}
+function testGetReservations() {
+  const result = getReservations('Solar Panel', 'Astro N5 CHSM72N(DG)F-BH 590W');
+  console.log('Total Reserved:', result.totalReserved);
+  console.log('Reservations:', JSON.stringify(result.reservations));
+  return result;
+}
+// ==================== GET STOCK LEVELS WITH RESERVATIONS ====================
+function getStockLevelsWithReservations() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    const reservationsSheet = ss.getSheetByName('Reservations');
+    
+    if (!sheet) return {};
+    
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return {};
+    
+    const stockData = sheet.getRange('A2:C' + lastRow).getValues();
+    const stockByCategory = {};
+    
+    // Build reservation totals map
+    let reservationTotals = {};
+    if (reservationsSheet) {
+      const resLastRow = reservationsSheet.getLastRow();
+      if (resLastRow >= 2) {
+        const resData = reservationsSheet.getRange('A2:E' + resLastRow).getValues();
+        for (let i = 0; i < resData.length; i++) {
+          const category = resData[i][0];
+          const itemName = resData[i][1];
+          const qty = resData[i][3];
+          
+          if (category && itemName && typeof qty === 'number') {
+            const key = `${category}|${itemName}`;
+            if (!reservationTotals[key]) {
+              reservationTotals[key] = 0;
+            }
+            reservationTotals[key] += qty;
+          }
+        }
+      }
+    }
+    
+    // Process stock data
+    for (let i = 0; i < stockData.length; i++) {
+      const category = stockData[i][0];
+      const itemName = stockData[i][1];
+      let quantity = stockData[i][2];
+      
+      if (!category || !itemName) continue;
+      
+      if (typeof quantity !== 'number') {
+        quantity = parseInt(quantity) || 0;
+      }
+      
+      const key = `${category}|${itemName}`;
+      const reserved = reservationTotals[key] || 0;
+      const remaining = quantity - reserved;
+      
+      if (!stockByCategory[category]) {
+        stockByCategory[category] = [];
+      }
+      
+      let status = 'Good';
+      if (remaining === 0) {
+        status = 'Out of Stock';
+      } else if (remaining < 10) {
+        status = 'Low Stock';
+      } else if (remaining < 50) {
+        status = 'Medium Stock';
+      }
+      
+      stockByCategory[category].push({
+        name: itemName,
+        quantity: quantity,
+        reserved: reserved,
+        remaining: remaining,
+        status: status
+      });
+    }
+    
+    return stockByCategory;
+    
+  } catch (error) {
+    console.error('Error getting stock levels with reservations:', error);
+    return {};
+  }
+}
+// ==================== GET MATERIAL ORDERS ====================
+function getMaterialOrders() {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const materialSheet = ss.getSheetByName('Material Order');
+    
+    if (!materialSheet) {
+      console.error('Material Order sheet not found');
+      return [];
+    }
+    
+    const lastRow = materialSheet.getLastRow();
+    if (lastRow < 2) return [];
+    
+    // Get data from columns A, B, C, D (Category, Item Name, Quantity, Status)
+    const data = materialSheet.getRange('A2:D' + lastRow).getValues();
+    const orders = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const category = data[i][0];
+      const itemName = data[i][1];
+      let quantity = data[i][2];
+      let status = data[i][3]; // Status from dropdown
+      
+      // Skip empty rows
+      if (!category || !itemName) continue;
+      
+      // Ensure quantity is a number
+      if (typeof quantity !== 'number') {
+        quantity = parseInt(quantity) || 0;
+      }
+      
+      // Only show items with quantity > 0
+      if (quantity > 0) {
+        // If status is empty, set default based on quantity
+        if (!status || status === '') {
+          if (quantity > 50) {
+            status = 'Order placed';
+          } else if (quantity > 10) {
+            status = 'Shipping in progress';
+          } else {
+            status = 'Received';
+          }
+        }
+        
+        orders.push({
+          category: category,
+          itemName: itemName,
+          quantity: quantity,
+          status: status
+        });
+      }
+    }
+    
+    // Sort by status priority: Order placed -> Shipping in progress -> Received
+    const statusOrder = {
+      'Order placed': 1,
+      'Shipping in progress': 2,
+      'Received': 3
+    };
+    
+    orders.sort((a, b) => {
+      const orderA = statusOrder[a.status] || 99;
+      const orderB = statusOrder[b.status] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return b.quantity - a.quantity;
+    });
+    
+    return orders;
+    
+  } catch (error) {
+    console.error('Error getting material orders:', error);
+    return [];
+  }
+}
+
+// ==================== GET FILTERED TRANSACTIONS ====================
+function getFilteredTransactions(month, year) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+    
+    if (!sheet) return [];
+    
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return [];
+    
+    const data = sheet.getRange('A2:J' + lastRow).getValues();
+    const filteredData = [];
+
+    data.forEach(row => {
+      const timestamp = row[0];
+      if (!timestamp) return;
+
+      // Robust Date Parsing
+      const dateObj = (timestamp instanceof Date) ? timestamp : new Date(timestamp);
+      
+      // Skip if the date is invalid
+      if (isNaN(dateObj.getTime())) return;
+
+      const tMonth = dateObj.getMonth();     // 0-11
+      const tYear = dateObj.getFullYear();
+
+      // Filtering Logic (-1 means "All")
+      const monthMatch = (month == -1 || tMonth == month);
+      const yearMatch = (year == -1 || tYear == year);
+
+      if (monthMatch && yearMatch) {
+        filteredData.push({
+          timestamp: Utilities.formatDate(dateObj, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
+          category: row[1],
+          itemName: row[2],
+          type: row[3],
+          quantity: row[4],
+          prevStock: row[5],
+          newStock: row[6],
+          remark: row[7] || '',
+          user: row[9] || 'System'
+        });
+      }
+    });
+
+    // Sort newest first
+    return filteredData.reverse();
+    
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    return [];
+  }
+}
+// ==================== GET ALL TRANSACTIONS (No Filter) ====================
+function getAllTransactions() {
+  return getTransactionsByMonth(-1);
+}
+// ==================== GET RECENT TRANSACTIONS (LIMITED) ====================
+function getRecentTransactionsByMonth(month, limit = 200) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const transactionsSheet = ss.getSheetByName(TRANSACTIONS_SHEET);
+    
+    if (!transactionsSheet) return [];
+    
+    const lastRow = transactionsSheet.getLastRow();
+    if (lastRow < 2) return [];
+    
+    // Start from the most recent rows (bottom of sheet)
+    const startRow = Math.max(2, lastRow - limit + 1);
+    const numRows = lastRow - startRow + 1;
+    const data = transactionsSheet.getRange(startRow, 1, numRows, 10).getValues();
+    
+    const transactions = [];
+    
+    for (let i = data.length - 1; i >= 0; i--) {
+      const row = data[i];
+      const timestamp = row[0];
+      const category = row[1];
+      const itemName = row[2];
+      const transactionType = row[3];
+      const quantity = row[4];
+      const remark = row[7];
+      const userName = row[9];
+      
+      if (!category || !itemName) continue;
+      
+      let transactionMonth = -1;
+      if (timestamp instanceof Date) {
+        transactionMonth = timestamp.getMonth();
+      } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+        const dateObj = new Date(timestamp);
+        if (!isNaN(dateObj.getTime())) {
+          transactionMonth = dateObj.getMonth();
+        }
+      }
+      
+      if (month === -1 || transactionMonth === month) {
+        transactions.push({
+          timestamp: timestamp,
+          category: category,
+          itemName: itemName,
+          transactionType: transactionType,
+          quantity: quantity,
+          remark: remark || '',
+          userName: userName || 'Anonymous'
+        });
+      }
+    }
+    
+    return transactions;
+    
+  } catch (error) {
+    console.error('Error:', error);
+    return [];
+  }
+}
